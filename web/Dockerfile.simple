@@ -1,0 +1,9 @@
+# Use official PHP 8.2 Apache image (no PPA / apt PHP install)
+FROM php:8.2-apache
+
+RUN a2enmod rewrite
+
+# Document root is already /var/www/html
+EXPOSE 80
+
+CMD ["apache2-foreground"]

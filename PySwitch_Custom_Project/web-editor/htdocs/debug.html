@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug Console</title></head>
+<body>
+<h2>Browser Console Log</h2>
+<pre id="log" style="background:#111;color:#0f0;padding:10px;font-size:12px;max-height:90vh;overflow:auto;"></pre>
+<script>
+const log = document.getElementById('log');
+function append(type, args) {
+    const line = '[' + type + '] ' + Array.from(args).map(a => {
+        try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+        catch(e) { return String(a); }
+    }).join(' ');
+    log.textContent += line + '\n';
+    log.scrollTop = log.scrollHeight;
+}
+const orig = { log: console.log, warn: console.warn, error: console.error };
+console.log = function() { orig.log.apply(console, arguments); append('LOG', arguments); };
+console.warn = function() { orig.warn.apply(console, arguments); append('WARN', arguments); };
+console.error = function() { orig.error.apply(console, arguments); append('ERR', arguments); };
+window.onerror = function(msg, src, line, col, err) {
+    append('UNCAUGHT', [msg, 'at', src + ':' + line + ':' + col, err ? err.stack : '']);
+};
+window.addEventListener('unhandledrejection', function(e) {
+    append('UNHANDLED_PROMISE', [e.reason ? (e.reason.stack || e.reason) : e]);
+});
+
+// Now load the main app in an iframe
+document.write('<iframe src="/#template/MIDICaptain%20Mini%206" style="display:none"></iframe>');
+
+// Or just test the key fetches
+async function testFetches() {
+    const urls = [
+        'templates/toc.php',
+        'templates/toc.json',
+        'circuitpy/lib/pyswitch/clients/toc.php',
+        'circuitpy/lib/pyswitch/clients/toc.json',
+        'definitions/actions.json',
+        'templates/MIDICaptain%20Mini%206/inputs.py',
+        'templates/MIDICaptain%20Mini%206/display.py',
+        'lib/pyodide/pyodide.js',
+    ];
+    for (const url of urls) {
+        try {
+            const r = await fetch(url);
+            const text = await r.text();
+            const isJson = url.endsWith('.json') || url.endsWith('.php');
+            let valid = true;
+            if (isJson) {
+                try { JSON.parse(text); } catch(e) { valid = false; }
+            }
+            append('FETCH', [r.status, url, isJson ? (valid ? 'valid JSON' : 'INVALID JSON: ' + text.substring(0, 100)) : 'ok (' + text.length + ' bytes)']);
+        } catch(e) {
+            append('FETCH_ERR', [url, e.message]);
+        }
+    }
+}
+testFetches();
+</script>
+</body>
+</html>

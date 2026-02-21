@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug</title></head>
+<body>
+<div id="errors" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#300;color:#f88;font:12px monospace;padding:8px;max-height:50vh;overflow:auto;display:none;"></div>
+<script>
+const errDiv = document.getElementById('errors');
+function showErr(msg) {
+    errDiv.style.display = 'block';
+    errDiv.textContent += msg + '\n';
+}
+window.onerror = function(msg, src, line, col, err) {
+    showErr('ERROR: ' + msg + ' at ' + src + ':' + line + ':' + col + (err ? '\n' + err.stack : ''));
+};
+window.addEventListener('unhandledrejection', function(e) {
+    showErr('PROMISE: ' + (e.reason ? (e.reason.stack || e.reason.message || e.reason) : e));
+});
+// Patch fetch to log failures
+const origFetch = window.fetch;
+window.fetch = function() {
+    return origFetch.apply(this, arguments).then(r => {
+        if (!r.ok) showErr('FETCH FAIL: ' + r.status + ' ' + arguments[0]);
+        return r;
+    }).catch(e => {
+        showErr('FETCH ERR: ' + arguments[0] + ' ' + e.message);
+        throw e;
+    });
+};
+</script>
+<!-- Now load everything from index.html -->
+<script>
+    if (typeof window !== 'undefined') { window.EMULATOR_FONT_SCALE = window.EMULATOR_FONT_SCALE ?? 0.5; }
+</script>
+<link rel="stylesheet" href="lib/fa/css/all.min.css">
+<link rel="stylesheet" href="lib/jquery/jquery-ui/jquery-ui.min.css">
+<link rel="stylesheet" href="lib/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="lib/codemirror/addons/lint/lint.css">
+<link rel="stylesheet" href="lib/tippy/themes/translucent.css">
+<script src="lib/jquery/jquery-3.7.1.min.js"></script>
+<script src="lib/jquery/jquery-ui/jquery-ui.min.js"></script>
+<script src="lib/sammy-latest.min.js"></script>
+<script src="lib/pyodide/pyodide.js"></script>
+<script src="lib/jsmidibridge/JsMidiBridge.js"></script>
+<script src="lib/muuri/muuri.min.js"></script>
+<script src="lib/marked/marked.min.js"></script>
+<script src="lib/interactjs/interact.min.js"></script>
+<script src="lib/tippy/popper.min.js"></script>
+<script src="lib/tippy/tippy-bundle.umd.min.js"></script>
+<script src="lib/codemirror/lib/codemirror.js"></script>
+<script src="lib/codemirror/mode/python/python.js"></script>
+<script src="lib/codemirror/addons/lint/lint.js"></script>
+<script src="lib/FileSaver/FileSaver.min.js"></script>
+<script type="module">import{downloadZip}from"./lib/client-zip.js";window.downloadZip=downloadZip;</script>
+<script type="module">import{get,set}from"./lib/idb-keyval/idb-keyval.js";window.idbKeyval={get,set};</script>
+<link rel="stylesheet" href="styles/general.css">
+<link rel="stylesheet" href="styles/tabs.css">
+<link rel="stylesheet" href="styles/buttons.css">
+<link rel="stylesheet" href="styles/application.css">
+<link rel="stylesheet" href="styles/progress.css">
+<link rel="stylesheet" href="styles/message.css">
+<link rel="stylesheet" href="styles/list-browser.css">
+<link rel="stylesheet" href="styles/client-select.css">
+<link rel="stylesheet" href="styles/pyswitch.css">
+<link rel="stylesheet" href="styles/virtual-clients.css">
+<link rel="stylesheet" href="styles/parser-frontend.css">
+<link rel="stylesheet" href="styles/parser-action-properties.css">
+<link rel="stylesheet" href="styles/parser-actions.css">
+<link rel="stylesheet" href="styles/markdown.css">
+<link rel="stylesheet" href="styles/parser-additional-params.css">
+<link rel="stylesheet" href="styles/parser-frontend-action-icons.css">
+<link rel="stylesheet" href="styles/parser-pages.css">
+<link rel="stylesheet" href="styles/tooltips.css">
+<link rel="stylesheet" href="styles/parameter-list.css">
+<link rel="stylesheet" href="styles/display-editor.css">
+<link rel="stylesheet" href="styles/code-editor.css">
+<link rel="stylesheet" href="styles/midi-monitor.css">
+<link rel="stylesheet" href="styles/live-panel.css">
+<link rel="stylesheet" href="styles/emulator-settings.css">
+<link rel="stylesheet" href="styles/combo-pages.css">
+<script src="js/Controller.js"></script>
+<script src="js/PySwitchRunner.js"></script>
+<script src="js/ClientController.js"></script>
+<script src="js/DeviceController.js"></script>
+<script src="js/PySwitchVersionCheck.js"></script>
+<script src="js/misc/Tools.js"></script>
+<script src="js/misc/PeriodCounter.js"></script>
+<script src="js/misc/LocalState.js"></script>
+<script src="js/routing/Routing.js"></script>
+<script src="js/routing/CallbackQueue.js"></script>
+<script src="js/model/Device.js"></script>
+<script src="js/model/Client.js"></script>
+<script src="js/model/VirtualClient.js"></script>
+<script src="js/model/ClientDetector.js"></script>
+<script src="js/model/Presets.js"></script>
+<script src="js/model/ConfigFile.js"></script>
+<script src="js/model/CommunicationSettings.js"></script>
+<script src="js/model/configurations/Configuration.js"></script>
+<script src="js/model/configurations/ControllerConfiguration.js"></script>
+<script src="js/model/configurations/WebConfiguration.js"></script>
+<script src="js/model/configurations/PresetConfiguration.js"></script>
+<script src="js/model/configurations/LocalFolderConfiguration.js"></script>
+<script src="js/model/parser/Parser.js"></script>
+<script src="js/model/parser/FunctionMeta.js"></script>
+<script src="js/model/parser/ParameterMeta.js"></script>
+<script src="js/model/parser/ParameterRange.js"></script>
+<script src="js/model/parser/ParserChecks.js"></script>
+<script src="js/model/parser/ParserTreeElement.js"></script>
+<script src="js/model/parser/ParserInput.js"></script>
+<script src="js/model/parser/ParserInputAction.js"></script>
+<script src="js/model/parser/ClassItemExtractor.js"></script>
+<script src="js/model/parser/Resolver.js"></script>
+<script src="js/midi/MidiHandler.js"></script>
+<script src="js/midi/MidiListener.js"></script>
+<script src="js/midi/MidiBridgeHandler.js"></script>
+<script src="js/midi/PythonMidiWrapper.js"></script>
+<script src="js/ui/PySwitchUI.js"></script>
+<script src="js/ui/PySwitchFrontend.js"></script>
+<script src="js/ui/popups/Popup.js"></script>
+<script src="js/ui/popups/BrowserPopup.js"></script>
+<script src="js/ui/popups/BrowserEntry.js"></script>
+<script src="js/ui/popups/BrowserProvider.js"></script>
+<script src="js/ui/tabs/Tabs.js"></script>
+<script src="js/ui/tabs/Tab.js"></script>
+<script src="js/ui/misc/ParameterList.js"></script>
+<script src="js/ui/misc/Notifications.js"></script>
+<script src="js/ui/misc/ClientConnectionButton.js"></script>
+<script src="js/ui/misc/PortsProvider.js"></script>
+<script src="js/ui/misc/SingleEntryProvider.js"></script>
+<script src="js/ui/misc/Download.js"></script>
+<script src="js/ui/misc/Upload.js"></script>
+<script src="js/ui/misc/WcRotationInput.js"></script>
+<script src="js/ui/misc/MidiMonitor.js"></script>
+<script src="js/ui/misc/LivePanel.js"></script>
+<script src="js/ui/misc/EmulatorSettings.js"></script>
+<script src="js/ui/parser/ParserFrontend.js"></script>
+<script src="js/ui/parser/ParserFrontendInput.js"></script>
+<script src="js/ui/parser/ParserFrontendIcons.js"></script>
+<script src="js/ui/parser/ActionProperties.js"></script>
+<script src="js/ui/parser/ActionsProvider.js"></script>
+<script src="js/ui/parser/InputSettings.js"></script>
+<script src="js/ui/parser/PagesList.js"></script>
+<script src="js/ui/parser/PagerProperties.js"></script>
+<script src="js/ui/parser/ActionPropertiesInternal.js"></script>
+<script src="js/ui/parser/ActionPropertiesEncoder.js"></script>
+<script src="js/ui/parser/ComboPageProperties.js"></script>
+<script src="js/ui/presets/LocalPresetsProvider.js"></script>
+<script src="js/ui/editors/CodeEditor.js"></script>
+<script src="js/ui/editors/display/DisplayEditor.js"></script>
+<script src="js/ui/editors/display/DisplayPreview.js"></script>
+<script src="js/ui/editors/display/DisplayParameters.js"></script>
+<script src="js/ui/editors/display/DisplayParameterList.js"></script>
+<script src="js/ui/editors/display/DisplayNode.js"></script>
+<script src="js/ui/editors/display/DisplayNodeType.js"></script>
+<script src="js/ui/editors/display/DisplayNodePreviewDrag.js"></script>
+<script src="js/ui/editors/display/DisplayNodePreview.js"></script>
+<script src="js/ui/editors/display/DisplayCallbackParameterList.js"></script>
+<script src="js/ui/editors/display/DisplayGeneralParameterList.js"></script>
+<script src="js/ui/editors/display/types/DisplayLabelType.js"></script>
+<script src="js/ui/editors/display/types/DisplayLabelTypeLayout.js"></script>
+<script src="js/ui/editors/display/types/DisplayLabelTypeParameterList.js"></script>
+<script src="js/ui/editors/display/types/BidirectionalProtocolStateType.js"></script>
+<script src="js/ui/editors/display/types/BidirectionalStateTypeParameterList.js"></script>
+<script src="js/ui/examples/ExamplesProvider.js"></script>
+<script src="js/ui/examples/TemplatesProvider.js"></script>
+<script src="js/ui/localfolder/LocalFolderSelection.js"></script>
+<script src="clients/ClientFactory.js"></script>
+<script src="clients/kemper/KemperClient.js"></script>
+<script src="clients/kemper/KemperClientDetector.js"></script>
+<script src="clients/kemper/KemperFunctionMeta.js"></script>
+<script src="clients/kemper/KemperParameterMeta.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperParameter.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperParameterDefault.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperParameters.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperClient.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperProtocol.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperClientSetup.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperParameterKeys.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperTempo.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperTuner.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperMorph.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperStats.js"></script>
+<script src="clients/kemper/virtual/VirtualKemperClientUI.js"></script>
+<script src="clients/boomerang/BoomerangClient.js"></script>
+<script src="clients/boomerang/BoomerangFunctionMeta.js"></script>
+<script src="devices/paintaudio/PaintAudioDevice.js"></script>
+<link rel="stylesheet" href="devices/paintaudio/styles/midicaptain-nano-4.css">
+<link rel="stylesheet" href="devices/paintaudio/styles/midicaptain-mini-6.css">
+<link rel="stylesheet" href="devices/paintaudio/styles/midicaptain-10.css">
+<link rel="stylesheet" href="devices/paintaudio/styles/midicaptain.css">
+<style>.pyswitch-emulator{position:absolute;top:40px;right:0;left:0;bottom:0;}</style>
+<div class="pyswitch-emulator"></div>
+<script>
+window.onload = async function() {
+    try {
+        showErr('Starting Controller...');
+        const c = new Controller({ containerElementSelector: '.pyswitch-emulator' });
+        showErr('Controller created, calling run()...');
+        await c.run();
+        showErr('run() completed');
+    } catch(e) {
+        showErr('FATAL: ' + e.message + '\n' + e.stack);
+    }
+};
+</script>
+</body>
+</html>

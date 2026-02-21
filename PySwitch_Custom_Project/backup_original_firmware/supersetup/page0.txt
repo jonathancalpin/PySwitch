@@ -1,0 +1,183 @@
+[globalsetup]
+# 0-100
+ledbright = [30]
+
+# 0-100
+screenbright = [80]
+
+# on / off
+midithrough = [off]
+
+# on / off
+# Selecting black or white fonts according to the wallpaper background
+dark_fonts = [off]
+
+# 123 / abc3 / abc4 / abc5 / abc8
+# Setting 123 is to display the PC as a numerical value
+# abc3 means PC display as 1A,1B,1C,2A... abc5 means 1A,1B,1C,1D,1E,2A...
+display_number_ABC = [abc3]
+
+# 0 / 1 
+# set to 1 so that the displayed PC number starting from 1 (PC value +1)
+# set to 0 so that the displayed PC number starting from 0 (actual PC value)
+display_pc_offset = [1]
+
+# 0 / 1 
+# set to 0 so that when abcX display selected above, start from 0A,0B,0C...
+# set to 1 so that when abcX display selected above, start from 1A,1B,1C...
+display_bank_offset = [1]
+
+# wp1 / wp2 / wp3
+wallpaper = [wp2]
+
+# 1 / 1.5 / 2 / 2.5
+# long press time in second
+long_press_timing = [1]
+
+
+[PAGE]
+# Change the "NAME" below in uppercase letters <= 4 characters
+page_name = [NAME]
+
+[key0]
+keytimes = [1]
+# ledmode can be select/normal/tap
+# 'select' means all the 'select' led can be only one current selected lighting
+# 'normal' means just showing the ledcolorX normally
+# 'tap' means a tapping speed flashing action
+ledmode = [select]
+ledcolor1 = [0xffff00][0xffff00][0xffff00]
+# PC value -1 for each pressing
+short_dw1 = [1][PC][dec1][-]
+
+[key1]
+keytimes = [1]
+ledmode = [select]
+ledcolor1 = [0x00ffff][0x00ffff][0x00ffff]
+# PC value +1 for each pressing
+short_dw1 = [1][PC][inc1][-]
+
+[key2]
+keytimes = [3]
+ledcolor1 = [0xff00ff][0x000000][0x000000]
+ledcolor2 = [0x000000][0xff00ff][0x000000]
+ledcolor3 = [0x000000][0x000000][0xff00ff]
+# loop between PC 0, 2, 4 send when key short released
+short_up1 = [1][PC][0][-] 
+short_up2 = [1][PC][2][-]
+short_up3 = [1][PC][4][-]
+
+[key3]
+keytimes = [1]
+# HID command simulating the keyboard left_arrow key
+ledcolor1 = [0xff0000][0xff0000][0xff0000]
+short_dw1 = [-][HID][-][Left]
+
+[key4]
+keytimes = [2]
+# Make a CC toggling command CC 20 127/0
+ledcolor1 = [0xff0ff0][0xff0ff0][0xff0ff0]
+short_dw1 = [1][CC][20][127]
+ledcolor2 = [0x000000][0x000000][0x000000]
+short_dw2 = [1][CC][20][0]
+
+[key5]
+keytimes = [1]
+ledcolor1 = [0x0000ff][0x0000ff][0x0000ff]
+# HID command simulating the keyboard right_arrow key
+short_dw1 = [-][HID][-][Right]
+
+
+#  HID keyboard commands can be only applied to short_dwX command
+#  Key words can be put into the third position A in "[][HID][A][B]" HID command
+#  The follow 5 keywords can be only used as the A in A + B command.
+#  For example: [-][HID][Ctrl][Space], means send the Ctrl + Space keyboard command
+#  Note: Pay attention to the case sensitivity of the specified keywords
+#  If no combination key needed, just leave empty as [] or [-]
+
+#    Ctrl
+#    Shift
+#    Alt
+#    Option
+#    Windows
+#    -
+
+
+#  Key words can be put into the Fourth position B in "[][HID][A][B]" HID command
+#  The follow 66 keywords can be used as A + B Keyboard command or B Keyboard command along
+#  For example: [-][HID][Ctrl][Space], means send the Ctrl + Space keyboard command
+#  For example: [-][HID][-][Space], means send the Space keyboard command
+#  Note: Pay attention to the case sensitivity of the specified keywords
+#  If [-][HID][-][Mouse_L] is set, you can simulate a mouse left click.
+
+#    Space
+#    Esc                 
+#    Caps
+#    PageUp
+#    PageDown
+#    Up
+#    Down
+#    Left
+#    Right
+#    End
+#    Enter
+#    Table
+#    Home
+#    Ins
+#    Del
+#    PrintS
+#    Pause
+#    BackSpace                                       
+#    F1
+#    F2
+#    F3
+#    F4
+#    F5
+#    F6
+#    F7
+#    F8
+#    F9
+#    F10
+#    F11
+#    F12
+#    1
+#    2
+#    3
+#    4
+#    5
+#    6
+#    7
+#    8
+#    9
+#    0
+#    A
+#    B
+#    C
+#    D
+#    E
+#    F
+#    G
+#    H
+#    I
+#    J
+#    K
+#    L
+#    M
+#    N
+#    O
+#    P
+#    Q
+#    R
+#    S
+#    T
+#    U
+#    V
+#    W
+#    X
+#    Y
+#    Z
+#    Mouse_L
+#    Mouse_R
+
+
+

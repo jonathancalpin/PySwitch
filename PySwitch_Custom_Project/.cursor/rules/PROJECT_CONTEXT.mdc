@@ -1,0 +1,23 @@
+---
+description: Read project guide and todo list to maintain context and achieve goals (MIDI Captain Mini 6)
+alwaysApply: true
+---
+
+# Project Context – MIDI Captain Mini 6
+
+When working on this project:
+
+1. **Read at session start (or when scope is unclear):**
+   - **PROJECT_GUIDE.md** – goals, rules to follow, key files, constraints.
+   - **TODOS.md** – actionable todo list; next unchecked item is the next task.
+   - **ACTION_PLAN.md** – current phase and current task.
+
+2. **Follow the rules in PROJECT_GUIDE.md Section 2:**
+   - Before starting: read ACTION_PLAN and TODOS.
+   - When writing code: device firmware = deploy_stock only; no input-rebuild on page change; display = 6 blocks, color per switch, dim when off.
+   - When finishing a task: tick TODOS.md and update ACTION_PLAN if needed.
+   - When scope changes: keep ACTION_PLAN, PROJECT_SCOPE_MIDI_CAPTAIN_MINI_6.md, and CURSOR_INITIAL_PROMPT.md in sync.
+
+3. **Stable device firmware:** deploy_stock/ only. Deploy with ./deploy-to-device.sh. Do not use input-rebuild on page change (it breaks toggles).
+
+4. **Single source for "what's next":** ACTION_PLAN.md. Actionable checklist: TODOS.md.

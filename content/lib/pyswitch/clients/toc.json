@@ -1,0 +1,22 @@
+{
+    "type": "dir",
+    "name": "",
+    "path": "",
+    "children": [
+        {
+            "type": "dir",
+            "name": "boomerang",
+            "children": []
+        },
+        {
+            "type": "dir",
+            "name": "kemper",
+            "children": []
+        },
+        {
+            "type": "dir",
+            "name": "local",
+            "children": []
+        }
+    ]
+}

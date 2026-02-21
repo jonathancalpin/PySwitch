@@ -1,0 +1,16 @@
+# Run the PySwitch web editor without the full PHP/Apache build (avoids PPA issues).
+# Usage: docker compose -f compose.simple.yaml up -d
+# Then open http://localhost:80
+
+services:
+  pyswitch-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: apache-pyswitch-ui
+    ports:
+      - "80:80"
+    volumes:
+      - ./htdocs:/var/www/html
+      - ../content:/var/www/html/circuitpy
+      - ../examples:/var/www/html/examples

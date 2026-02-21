@@ -1,0 +1,12 @@
+services:
+  pyswitch-custom-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: apache-pyswitch-custom-ui
+    ports:
+      - "8080:80"
+    volumes:
+      - ./htdocs:/var/www/html
+      - ../../content:/var/www/html/circuitpy
+      - ../../examples:/var/www/html/examples

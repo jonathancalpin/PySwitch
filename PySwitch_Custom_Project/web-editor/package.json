@@ -1,0 +1,14 @@
+{
+  "name": "pyswitch-web-editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "npx serve htdocs -l 8080",
+    "test:emulator": "playwright test tests/emulator-sync.spec.js",
+    "test:emulator:headed": "playwright test tests/emulator-sync.spec.js --headed",
+    "postinstall": "playwright install chromium 2>/dev/null || true"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

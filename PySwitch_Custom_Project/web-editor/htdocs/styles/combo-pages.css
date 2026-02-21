@@ -1,0 +1,299 @@
+/**
+ * Combo Page Navigation UI Styles
+ */
+
+/* Main container */
+.combo-page-properties {
+    padding: 15px;
+    background: var(--bg-secondary, #1e1e1e);
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+/* Header */
+.combo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color, #444);
+}
+
+.combo-header h3 {
+    margin: 0;
+    color: var(--text-primary, #fff);
+}
+
+.combo-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.combo-status.status-enabled {
+    background: #2d5a2d;
+    color: #7fff7f;
+}
+
+.combo-status.status-disabled {
+    background: #5a2d2d;
+    color: #ff7f7f;
+}
+
+/* Settings panel */
+.combo-settings {
+    background: var(--bg-tertiary, #2a2a2a);
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.setting-row label {
+    min-width: 200px;
+    color: var(--text-secondary, #ccc);
+}
+
+.setting-row input[type="number"] {
+    width: 80px;
+    padding: 6px 10px;
+    background: var(--bg-input, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+}
+
+.setting-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.setting-help {
+    font-size: 11px;
+    color: var(--text-muted, #888);
+    margin-left: 10px;
+}
+
+/* Combo switches selector */
+.combo-switches-selector {
+    display: flex;
+    gap: 15px;
+}
+
+.switch-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    background: var(--bg-input, #333);
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #555);
+}
+
+.switch-checkbox:hover {
+    background: var(--bg-hover, #444);
+}
+
+.switch-checkbox input {
+    margin: 0;
+}
+
+/* Combo assignments */
+.combo-assignments {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color, #444);
+}
+
+.combo-assignments h4 {
+    margin: 0 0 10px 0;
+    color: var(--text-secondary, #ccc);
+    font-size: 13px;
+}
+
+.combo-assignment {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: var(--bg-quaternary, #333);
+    border-radius: 4px;
+}
+
+.combo-keys {
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--accent-color, #4a9eff);
+    min-width: 60px;
+}
+
+.combo-arrow {
+    color: var(--text-muted, #888);
+}
+
+.combo-action {
+    color: var(--text-primary, #fff);
+}
+
+/* Pages section */
+.pages-section {
+    margin-top: 20px;
+}
+
+.pages-section h3 {
+    color: var(--text-primary, #fff);
+    margin-bottom: 15px;
+}
+
+/* Pages list */
+.pages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Page entry */
+.page-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary, #2a2a2a);
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #444);
+}
+
+.page-entry:hover {
+    border-color: var(--accent-color, #4a9eff);
+}
+
+.page-drag-handle {
+    cursor: grab;
+    color: var(--text-muted, #888);
+    padding: 5px;
+}
+
+.page-drag-handle:hover {
+    color: var(--text-primary, #fff);
+}
+
+.page-color-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #555);
+}
+
+.page-name-input {
+    flex: 1;
+    min-width: 100px;
+    padding: 6px 10px;
+    background: var(--bg-input, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+}
+
+.page-name-input:focus {
+    border-color: var(--accent-color, #4a9eff);
+    outline: none;
+}
+
+.page-channel-select,
+.page-midi-out-select {
+    padding: 6px 10px;
+    background: var(--bg-input, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 4px;
+    color: var(--text-primary, #fff);
+    cursor: pointer;
+}
+
+.page-color-picker {
+    width: 35px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.page-edit-btn,
+.page-remove-btn {
+    padding: 6px 10px;
+    background: var(--bg-input, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 4px;
+    color: var(--text-secondary, #ccc);
+    cursor: pointer;
+}
+
+.page-edit-btn:hover {
+    background: var(--accent-color, #4a9eff);
+    color: #fff;
+}
+
+.page-remove-btn:hover {
+    background: #c44;
+    color: #fff;
+}
+
+/* Add page row */
+.add-page-row {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.add-page-btn {
+    padding: 8px 20px;
+    background: var(--accent-color, #4a9eff);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-page-btn:hover {
+    background: #3a8eef;
+}
+
+/* Enable combo panel */
+.combo-enable-panel {
+    text-align: center;
+    padding: 30px;
+}
+
+.combo-enable-panel p {
+    color: var(--text-secondary, #ccc);
+    margin-bottom: 20px;
+}
+
+.combo-enable-panel button {
+    padding: 12px 24px;
+    background: var(--accent-color, #4a9eff);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.combo-enable-panel button:hover {
+    background: #3a8eef;
+}

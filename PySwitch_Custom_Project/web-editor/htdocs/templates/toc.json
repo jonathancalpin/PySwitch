@@ -1,0 +1,31 @@
+{
+    "type": "dir",
+    "name": "",
+    "path": "",
+    "children": [
+        {
+            "type": "dir",
+            "name": "MIDICaptain 10",
+            "children": [
+                {"type": "file", "name": "display.py"},
+                {"type": "file", "name": "inputs.py"}
+            ]
+        },
+        {
+            "type": "dir",
+            "name": "MIDICaptain Mini 6",
+            "children": [
+                {"type": "file", "name": "display.py"},
+                {"type": "file", "name": "inputs.py"}
+            ]
+        },
+        {
+            "type": "dir",
+            "name": "MIDICaptain Nano 4",
+            "children": [
+                {"type": "file", "name": "display.py"},
+                {"type": "file", "name": "inputs.py"}
+            ]
+        }
+    ]
+}
