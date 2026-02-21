@@ -1,19 +1,34 @@
 # PySwitch MIDI Controller Firmware
 
-This project provides an open source firmware for CircuitPython Microcontroller based MIDI controllers. It can control devices via MIDI based on a generic configuration script. 
+> **Fork notice:** This is a fork of [Tunetown/PySwitch](https://github.com/Tunetown/PySwitch). The upstream project focuses on Kemper Profiler integration. **This fork is tailored for controlling generic MIDI devices** such as Apple Logic Pro, IK Multimedia ToneX, Neural DSP plugins, GP-5, loopers, and any other hardware or software that responds to MIDI.
 
-The project has been developed for controling Kemper Profilers, but the framework itself is generic, so it can be adapted for other devices easily. Until now, the following devices are supported out of the box:
+## What This Fork Adds
 
-- Kemper Profilers (Head, Rack, Stage, Player etc.)
-- Boomerang III Phrase Sampler
+- **Custom naming** — give every switch a meaningful label on the display (e.g. "Clean", "Drive", "Chorus")
+- **Program Change (PC) presets** — send PC messages on any channel with radio-button groups so only one preset per channel is active
+- **Control Change (CC) messages** — momentary, toggle, or grouped CC control
+- **Display toggle** — switches show bright/dim colours to indicate on/off state at a glance
+- **A+B / B+C combo paging** — press two adjacent footswitches simultaneously to page through multiple switch pages, fitting far more presets onto a small controller
 
-Features are:
+## Supported Devices (as targets)
 
-- Program (Foot)switches and expression pedals to send MIDI messages. Each switch or pedal can do any amount of actions. Programming is done by setup scripts or graphically using a MIDI enabled, web based configuration tool, with lots of examples.
+This firmware can send MIDI to anything that listens — it is not locked to any single product. Tested targets include:
 
-- Establishes a bidirectional communication to reflect the states correctly when changed on the Kemper.
+- Apple Logic Pro (PC for patch switching, CC for transport/mixer)
+- IK Multimedia ToneX (PC preset recall)
+- Neural DSP plugins / Quad Cortex
+- Boss GP-5 / GP-10
+- Looper pedals (CC start/stop/overdub)
+- Any MIDI-capable amp, plugin, or DAW
 
-- Free MIDI routing capatbilities for MIDI over USB and/or DIN
+## Features
+
+- Program footswitches and expression pedals to send any combination of MIDI messages — each switch can trigger multiple actions
+- Custom display labels with per-switch colours and on/off brightness feedback
+- Multi-page layouts with combo-key page navigation (A+B / B+C)
+- PC preset groups with radio-button behaviour (one active per group)
+- CC toggle, momentary, and one-shot modes
+- Free MIDI routing between USB and DIN ports
 
 ![Overview Image](https://github.com/user-attachments/assets/c48903b2-a5f7-4d78-b7eb-9fca98dbfbe0)
 
@@ -26,7 +41,7 @@ Features are:
 5. Unmount the USB drive (important: wait until the drive really is unmounted, or it will sometimes forget everything again).
 6. Reboot the device. 
 7. Per default, PySwitch is configured for the PaintAudio MIDICaptain STD. Launch the [PySwitch Emulator](https://pyswitch.tunetown.de) in your Web Browser AFTER the device has been booted completely. It will automatically connect to the controller, you can then choose an example as a starting point (see the load button on the top left) and save it to your controller via the Save button -> Connected Controllers.
-8. Connect the controller to your Kemper (or other client).
+8. Connect the controller to your MIDI device (DAW, amp modeller, plugin host, etc.).
 
 **NOTE**: If the Save button does not show any connected controllers, your browser might not support Web MIDI (currently, for example Safari does not support this). In this case, you have to:
 - After creating your config in the Emulator, download it (see Save -> Download (ZIP)).
@@ -40,7 +55,7 @@ If you do not want to program your configuration yourself in Python (as describe
 
 ![image](https://github.com/user-attachments/assets/55270c26-ead9-4d66-a782-ff293bfe2abf)
 
-You can even control your actual Kemper from the browser to pre-test everything before flashing it to a connected device :) for more details see [this README](web/README.md).
+You can test your configuration in the browser before flashing it to a connected device. For more details see [this README](web/README.md).
 
 ## Portable Emulator (No Docker)
 
@@ -84,17 +99,9 @@ The `group="name"` parameter creates radio-button behavior for Program Change pr
 
 ## Motivation
 
-The firmware has been developed to interface the PaintAudio MIDI Captain series of MIDI controller pedals to the Kemper Profiler Player, which can be controlled very deeply via MIDI. It is based on the great explorational work of @gstrotmann who did a good part of hardware reverse engineering (https://github.com/gstrotmann/MidiCaptain4Kemper). 
+This fork re-purposes the excellent [PySwitch framework by Tunetown](https://github.com/Tunetown/PySwitch) — originally developed for Kemper Profiler control on PaintAudio MIDI Captain pedals — as a **general-purpose MIDI foot controller firmware**. The underlying framework is hardware-generic and runs on any CircuitPython board with a TFT display and NeoPixel LEDs.
 
-On the Kemper forums, the following thread is dedicated to the project:
-
-https://forum.kemper-amps.com/forum/thread/65206-pyswitch-an-alternative-customizable-firmware-for-paintaudio-midi-captain-contro/
-
-The manufacturer PaintAudio also provides a Kemper Player related firmware (<a href="https://cdn.shopify.com/s/files/1/0656/8312/8548/files/FW_MINI6_KPP_V3.51.zip?v=1711205983" target="_blank">PaintAudio firmware 3.5</a>) but this is hard wired all along and missing features. However, the open architecture of the controller also makes it possible to be more flexible.
-
-This project is developed generically, so it can basically be run on any board which runs CircuitPy, using the Adafruit libraries to run a TFT display and LEDs, to control basically any device which is controlled in a similar way as the Kemper devices and address any parameter or other information the controlled device provides. You just have to provide the apropriate adapter classes and mappings! 
-
-It would particularly be nice to add support for Line6 and FRactal devices, if anybody owning the one of them wants to be part of the project, we could implement that easily. Just reach me on the Kemper forum (see thread above).
+If you use a Kemper Profiler, the upstream project is a better fit. This fork is for players who want to control DAWs, amp modellers, plugins, or any other MIDI gear with custom switch labels, PC/CC messages, display feedback, and combo paging.
 
 ## Startup Options
 
@@ -1192,8 +1199,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Trademarks
 
-Kemper, Kemper Profiler, Kemper Profiler Player are trademarks of Kemper GmbH (www.kemper-amps.com)
-Midi Captain, Midi Captain Nano 4, Midi Captain Mini 6 are trademarks of PaintAudio (www.paintaudio.com)
+Kemper, Kemper Profiler, Kemper Profiler Player are trademarks of Kemper GmbH (www.kemper-amps.com). Logic Pro is a trademark of Apple Inc. ToneX is a trademark of IK Multimedia. Quad Cortex is a trademark of Neural DSP. Midi Captain, Midi Captain Nano 4, Midi Captain Mini 6 are trademarks of PaintAudio (www.paintaudio.com). All other trademarks are the property of their respective owners. This project is not affiliated with or endorsed by any of these companies.
 
 ## Donate
 
