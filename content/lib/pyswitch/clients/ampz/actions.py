@@ -15,7 +15,20 @@ from ...controller.client import ClientParameterMapping
 from ...colors import dim_color, DEFAULT_LABEL_COLOR
 from adafruit_midi.control_change import ControlChange
 
-from . import AmpzSysexMapping, TYPE_STOMP_LABEL, FAMILY_COLORS
+from . import AmpzSysexMapping, TYPE_STOMP_LABEL, TYPE_PRESET_NAME, FAMILY_COLORS
+
+
+# Callback for a DisplayLabel(callback = ...) that shows the preset name Ampz sends.
+class AmpzPresetNameCallback(Callback):
+
+    def __init__(self, default_text = "Ampz"):
+        super().__init__()
+        self._default_text = default_text
+        self._mapping = AmpzSysexMapping("Ampz preset", TYPE_PRESET_NAME, 0)
+        self.register_mapping(self._mapping)
+
+    def update_label(self, label):
+        label.text = self._mapping.value if self._mapping.value else self._default_text
 
 
 # Switch that sends CC `cc` with value 127 on every press (and 0 on release when momentary) and
