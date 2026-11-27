@@ -8,4 +8,5 @@ screenlog*
 
 web/apache2-log
 
-portable-emulator/.testroot/
+portable-emulator/
+.testroot/
