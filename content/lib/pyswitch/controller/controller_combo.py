@@ -16,7 +16,19 @@ class ComboController(Controller):
 
     def __init__(self, pager=None, **kwargs):
         super().__init__(**kwargs)
-        self._pager = pager
+        # Don't trust the passed pager reference - CircuitPython may
+        # give us a different instance than the one that was initialized.
+        # Instead, find the actual PagerAction from the initialized inputs.
+        self._pager = None
+        if pager is not None:
+            from ..clients.local.actions.pager import PagerAction
+            for inp in self.inputs:
+                for action in inp.actions:
+                    if isinstance(action, PagerAction):
+                        self._pager = action
+                        break
+                if self._pager:
+                    break
         self._pending = {}
         self._suppressed = set()
         self._last_pushed = {}
