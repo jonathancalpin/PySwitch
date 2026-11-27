@@ -1,7 +1,9 @@
 from ....controller.callbacks import Callback
 from ....controller.actions import Action
+from ....controller.client import ClientParameterMapping
 from ....colors import Colors, dim_color
 from adafruit_midi.midi_message import MIDIMessage
+from adafruit_midi.control_change import ControlChange
 
 # Sends a single raw, arbitrary MIDI message.
 #
@@ -10,6 +12,12 @@ from adafruit_midi.midi_message import MIDIMessage
 #
 # If group is set (string): radio-button behavior. When pressed, this action becomes active
 # and all other actions in the same group become inactive. Use for PC preset selection.
+#
+# If listen is True (toggle mode with a CC message only): the switch also follows incoming CCs
+# with the same controller number. Value >= 64 turns it on, < 64 turns it off. This lets the
+# host (for example Ampz) keep the LED in sync when presets change. Every incoming message is
+# applied, even if it repeats the last value, and the state survives page changes.
+# The MIDI channel of incoming messages is not checked.
 #
 # The messages have to be raw bytes, so don't forget to also add the status and (in case of SysEx) closing bytes!
 def CUSTOM_MESSAGE(message,                 # Raw MIDI message bytes (as list, for example [176, 80, 127] for CC on). You can use hex values in format 0xab, too.
@@ -23,7 +31,8 @@ def CUSTOM_MESSAGE(message,                 # Raw MIDI message bytes (as list, f
                    id = None,
                    enable_callback = None,
                    toggle = False,          # If True, each press toggles on/off (sends message then message_release). Release does nothing.
-                   group = None             # If set (string), radio-button behavior: pressing activates this, deactivates others in same group.
+                   group = None,            # If set (string), radio-button behavior: pressing activates this, deactivates others in same group.
+                   listen = False           # Toggle + CC only: follow incoming CCs with the same number (>= 64 on, < 64 off).
     ):
     if led_brightness_off is None:
         led_brightness_off = 0.04
@@ -36,7 +45,8 @@ def CUSTOM_MESSAGE(message,                 # Raw MIDI message bytes (as list, f
             led_brightness_off = led_brightness_off,
             text = text,
             toggle = toggle,
-            group = group
+            group = group,
+            listen = listen
         ),
         "display": display,
         "useSwitchLeds": use_leds,
@@ -62,7 +72,8 @@ class _CustomMessageCallback(Callback):
                  led_brightness_off,
                  text,
                  toggle = False,
-                 group = None
+                 group = None,
+                 listen = False
         ):
         super().__init__()
 
@@ -76,8 +87,22 @@ class _CustomMessageCallback(Callback):
         self._group = group
         self._state = False
 
+        # Incoming state (toggle mode with a CC message only)
+        self._listen_mapping = None
+        if listen and self._toggle and not group and self._is_cc(message):
+            self._listen_mapping = ClientParameterMapping.get(
+                name = "Listen CC " + str(message[1]),
+                response = ControlChange(message[1], 0)
+            )
+
+    @staticmethod
+    def _is_cc(message):
+        return message is not None and len(message) == 3 and (message[0] & 0xF0) == 0xB0
+
     def init(self, appl, listener = None):
         self._appl = appl
+        if self._listen_mapping:
+            appl.client.register(self._listen_mapping, self)
         if self._group:
             key = "_custom_group_" + self._group
             if key not in appl.shared:
@@ -112,7 +137,22 @@ class _CustomMessageCallback(Callback):
             self._appl.client.midi.send(self._RawMessage(self._message_release))
 
     def reset(self):
-        self._state = False
+        # A listening switch keeps its state: it belongs to the host, not to the page.
+        if not self._listen_mapping:
+            self._state = False
+
+    # Called by the client for every incoming message matching the listen mapping
+    def parameter_changed(self, mapping):
+        if mapping != self._listen_mapping or mapping.value is None:
+            return
+
+        self._state = mapping.value >= 64
+
+        if self.action.enabled:
+            self.update_displays()
+
+    def request_terminated(self, mapping):
+        pass
 
     def update_displays(self):
         self.action.switch_color = self._color

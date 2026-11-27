@@ -19,6 +19,11 @@
 # Stomp switches send 127 (on) / 0 (off): learn them in Ampz as Stomp Mappings
 # in LATCH mode. Everything else sends 127 on press: learn as Action Mappings.
 #
+# STATE SYNC: stomp switches also listen (listen = True) for their own CC coming
+# back from Ampz, over USB or the MIDI in jack: >= 64 lights the switch, < 64
+# turns it off. Ampz sends every stomp's state after a preset change, so the LEDs
+# follow presets. See PySwitch_Custom_Project/AMPZ_STATE_SYNC.md.
+#
 ##############################################################################
 
 from pyswitch.clients.local.actions.custom import CUSTOM_MESSAGE
@@ -73,6 +78,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_HEADER_1, 
                 toggle = True, 
+                listen = True, 
                 text = 'DIST', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -85,6 +91,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_HEADER_1, 
                 toggle = True, 
+                listen = True, 
                 text = 'PITCH', 
                 id = 'stompb', 
                 enable_callback = _pager.enable_callback
@@ -114,6 +121,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_HEADER_2, 
                 toggle = True, 
+                listen = True, 
                 text = 'DELAY', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -126,6 +134,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_HEADER_2, 
                 toggle = True, 
+                listen = True, 
                 text = 'WAH', 
                 id = 'stompb', 
                 enable_callback = _pager.enable_callback
@@ -155,6 +164,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_HEADER_3, 
                 toggle = True, 
+                listen = True, 
                 text = 'BOOST', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -194,6 +204,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_1, 
                 toggle = True, 
+                listen = True, 
                 text = 'CHORUS', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -206,6 +217,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_1, 
                 toggle = True, 
+                listen = True, 
                 text = 'FLANGER', 
                 id = 'stompb', 
                 enable_callback = _pager.enable_callback
@@ -267,6 +279,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_2, 
                 toggle = True, 
+                listen = True, 
                 text = 'TREM', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -279,6 +292,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_2, 
                 toggle = True, 
+                listen = True, 
                 text = 'COMP', 
                 id = 'stompb', 
                 enable_callback = _pager.enable_callback
@@ -308,6 +322,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_3, 
                 toggle = True, 
+                listen = True, 
                 text = 'PHASER', 
                 id = 'stompa', 
                 enable_callback = _pager.enable_callback
@@ -320,6 +335,7 @@ Inputs = [
                 led_brightness_off = 0.02, 
                 display = DISPLAY_FOOTER_3, 
                 toggle = True, 
+                listen = True, 
                 text = 'REVERB', 
                 id = 'stompb', 
                 enable_callback = _pager.enable_callback
