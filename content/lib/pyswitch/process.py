@@ -52,7 +52,7 @@ if not _get_option(_Config, "exploreMode"):
         from inputs import Inputs as _Inputs, ComboPager as _ComboPager
         from pyswitch.controller.controller_combo import ComboController as _ComboController
 
-        # Controller instance (A+B = page down, B+C = page up)
+        # Controller instance (runs the processing loop and keeps everything together)
         _controller = _ComboController(
             pager=_ComboPager,
             led_driver=_NeoPixelDriver(),
@@ -75,6 +75,12 @@ if not _get_option(_Config, "exploreMode"):
             pass
 
     except Exception as e:
+        print("PYSWITCH ERROR: " + str(type(e).__name__) + ": " + str(e))
+        try:
+            import traceback
+            traceback.print_exception(type(e), e, e.__traceback__)
+        except:
+            pass
         if _get_option(_Config, "enableMidiBridge"):
             _midi.error(e)
         else:
