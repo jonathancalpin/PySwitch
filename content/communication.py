@@ -1,7 +1,7 @@
 ##############################################################################
 #
 # MIDI Communication Configuration
-# MIDI Captain Mini 6 - USB and DIN MIDI, Ampz feedback protocol
+# MIDI Captain Mini 6 - USB and DIN MIDI both ways, Ampz feedback protocol
 #
 ##############################################################################
 
@@ -37,6 +37,11 @@ Communication = {
             MidiRouting(
                 source = MidiRouting.APPLICATION,
                 target = _DIN_MIDI
+            ),
+            # Ampz's feedback can arrive on the MIDI IN jack too (a Bluetooth DIN adapter, for example).
+            MidiRouting(
+                source = _DIN_MIDI,
+                target = MidiRouting.APPLICATION
             ),
         ]
     },
