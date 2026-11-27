@@ -47,6 +47,7 @@ def AMPZ_SWITCH(cc,
                 stomp = None,
                 enable_callback = None,
                 id = None,
+                use_leds = True,         # False for hold actions, so they do not take LED segments from the switch
                 led_on = 0.3,
                 led_half = 0.1,
                 led_off = 0.02):
@@ -62,7 +63,7 @@ def AMPZ_SWITCH(cc,
             led_off = led_off
         ),
         "display": display,
-        "useSwitchLeds": True,
+        "useSwitchLeds": use_leds,
         "id": id,
         "enableCallback": enable_callback
     })

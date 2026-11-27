@@ -168,6 +168,11 @@ class TestAmpzSwitch(unittest.TestCase):
         self.assertAlmostEqual(appl.inputs[0].brightness, 0.1)
         self.assertEqual(label.back_color, dim_color(FAMILY_COLORS[9], 0.5))
 
+    def test_hold_actions_can_leave_the_leds_alone(self):
+        action = AMPZ_SWITCH(cc = 68, text = "TUNER", use_leds = False)
+        self.assertFalse(action.uses_switch_leds)
+        self.assertTrue(AMPZ_SWITCH(cc = 68, text = "TUNER").uses_switch_leds)
+
     def test_press_never_changes_display(self):
         label = MockDisplayLabel()
         appl, switch, _ = self._build(self._stomp_switch(label, cc = 28, stomp = 6))

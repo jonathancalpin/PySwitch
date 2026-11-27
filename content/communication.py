@@ -1,7 +1,7 @@
 ##############################################################################
 #
 # MIDI Communication Configuration
-# MIDI Captain Mini 6 - USB and DIN MIDI
+# MIDI Captain Mini 6 - USB and DIN MIDI, Ampz feedback protocol
 #
 ##############################################################################
 
@@ -10,6 +10,7 @@ from pyswitch.hardware.devices.pa_midicaptain import (
     PA_MIDICAPTAIN_USB_MIDI,
     PA_MIDICAPTAIN_DIN_MIDI
 )
+from pyswitch.clients.ampz.protocol import AmpzProtocol
 
 # USB MIDI
 _USB_MIDI = PA_MIDICAPTAIN_USB_MIDI(
@@ -38,5 +39,7 @@ Communication = {
                 target = _DIN_MIDI
             ),
         ]
-    }
+    },
+    # Asks Ampz for a full state dump at boot (and every 3 s until Ampz answers).
+    "protocol": AmpzProtocol()
 }
