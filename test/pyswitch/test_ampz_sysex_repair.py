@@ -16,6 +16,7 @@ with patch.dict(sys.modules, {
     "gc": MockGC()
 }):
     from lib.pyswitch.clients.ampz.sysex_repair import SysExRepairInput
+    from lib.pyswitch.clients.ampz import LINK
 
 
 class _Port:
@@ -89,3 +90,49 @@ class TestSysExRepairInput(unittest.TestCase):
     def test_empty_read_returns_none(self):
         r = SysExRepairInput(_Port([]))
         self.assertIsNone(r.read(10))
+
+
+# What the adapter does to CCs (raw UART capture, 2026-11-27): running status, and timestamp
+# bytes dropped between a CC's number and its value.
+class TestRunningStatusRepair(unittest.TestCase):
+
+    def test_running_status_ccs_get_their_status_back(self):
+        before = LINK.errors
+        wire = bytes([0xB0, 0x53, 0x00, 0x52, 0x00, 0x5A, 0x00])
+        self.assertEqual(_drain([wire]), bytes([0xB0, 0x53, 0x00, 0xB0, 0x52, 0x00, 0xB0, 0x5A, 0x00]))
+        self.assertEqual(LINK.errors, before)
+
+    def test_running_status_program_changes(self):
+        self.assertEqual(_drain([bytes([0xC0, 0x0E, 0x0F])]), bytes([0xC0, 0x0E, 0xC0, 0x0F]))
+
+    def test_leaked_byte_between_cc_number_and_value_is_ignored(self):
+        self.assertEqual(_drain([bytes([0xB0, 0x52, 0xAB, 0x00])]), bytes([0xB0, 0x52, 0x00]))
+
+    def test_leaked_byte_in_status_range_inside_a_cc_is_ignored(self):
+        wire = bytes([0xB0, 0x52, 0xB0, 0x00, 0x5A, 0x00])
+        self.assertEqual(_drain([wire]), bytes([0xB0, 0x52, 0x00, 0xB0, 0x5A, 0x00]))
+
+    def test_leaks_between_running_status_ccs_keep_the_running_status(self):
+        wire = bytes([0xB0, 0x53, 0x00, 0xAB, 0x52, 0x00, 0xF7, 0x5A, 0x00])
+        self.assertEqual(_drain([wire]), bytes([0xB0, 0x53, 0x00, 0xB0, 0x52, 0x00, 0xB0, 0x5A, 0x00]))
+
+    def test_frame_without_f0_after_running_status_ccs(self):
+        wire = bytes([0xB0, 0x53, 0x00, 0x52, 0x00]) + FRAME_3[1:]
+        self.assertEqual(_drain([wire]), bytes([0xB0, 0x53, 0x00, 0xB0, 0x52, 0x00]) + FRAME_3)
+
+    def test_sysex_cancels_running_status_so_data_after_it_is_an_error_not_a_cc(self):
+        before = LINK.errors
+        wire = bytes([0xB0, 0x53, 0x00]) + FRAME_3 + bytes([0x52, 0x00])
+        self.assertEqual(_drain([wire]), bytes([0xB0, 0x53, 0x00]) + FRAME_3)
+        self.assertGreater(LINK.errors, before)
+
+    def test_running_status_split_across_reads(self):
+        self.assertEqual(_drain([bytes([0xB0, 0x53, 0x00, 0x52]), bytes([0x00])]),
+                         bytes([0xB0, 0x53, 0x00, 0xB0, 0x52, 0x00]))
+
+    def test_the_captured_burst_decodes_to_every_cc(self):
+        wire = bytes.fromhex("ee b0 53 00 f2 b0 52 b0 00 5a 00 54 00 59 b0 00 57 00 50 00 51 b0 00 5b 00 56 00 3c b0 00 3d 00 3e 00 3f b0 00 64 00 c0 0f")
+        out = _drain([wire])
+        ccs = [out[i + 1] for i in range(0, len(out) - 2) if out[i] == 0xB0 and out[i + 2] == 0x00]
+        self.assertEqual(ccs, [0x53, 0x52, 0x5A, 0x54, 0x59, 0x57, 0x50, 0x51, 0x5B, 0x56, 0x3C, 0x3D, 0x3E, 0x3F, 0x64])
+        self.assertEqual(out[-2:], bytes([0xC0, 0x0F]))
