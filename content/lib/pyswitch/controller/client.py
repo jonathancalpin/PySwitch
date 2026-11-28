@@ -258,6 +258,8 @@ class Client: #(ClientRequestListener):
         self.midi = midi
         
         self.debug_unparsed_messages = get_option(config, "debugUnparsedMessages", False)
+        # Prints every message that reaches the application, parsed or not (serial console).
+        self.debug_received_messages = get_option(config, "debugReceivedMessages", False)
         self.__debug_sent_messages = get_option(config, "debugSentMessages", False)
         self.debug_exclude_types = get_option(config, "excludeMessageTypes", None)
         self.debug_mapping = get_option(config, "debugMapping", None)
@@ -369,6 +371,9 @@ class Client: #(ClientRequestListener):
 
         if not midi_message:
             return False
+
+        if self.debug_received_messages:   # pragma: no cover
+            self.print_message(midi_message)
         
         # See if one of the waiting requests matches
         do_cleanup = False
