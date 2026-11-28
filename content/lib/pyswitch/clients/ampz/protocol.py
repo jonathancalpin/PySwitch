@@ -31,6 +31,8 @@ class AmpzProtocol:
         self.__errors_seen = LINK.errors
         self.__last_error_at = 0
         self.__last_request_at = 0
+        self.__pending = False          # an error happened; a request is due once the link is quiet
+        self.__tries_left = 0           # requests still to send until Ampz answers
 
     # Called before usage, with a midi handler.
     def init(self, midi, client):
@@ -50,21 +52,31 @@ class AmpzProtocol:
 
     # Ask for a dump until Ampz answers. A real PeriodCounter starts exceeded, so the first
     # update() after boot sends at once.
+    MAX_TRIES = 5
+
     def update(self):
         if not self.alive:
             if self.retry_period.exceeded:
                 self.__request()
             return
-        # Something was lost on the way in: ask for everything again once the burst is over.
+        # Something was lost on the way in: ask for everything again once the burst is over,
+        # and keep asking every second until Ampz's reply arrives (the request itself can be
+        # lost on the same link), up to MAX_TRIES times.
         now = self.__now()
         if LINK.errors != self.__errors_seen:
             self.__errors_seen = LINK.errors
             self.__last_error_at = now
             self.__pending = True
-        if getattr(self, "_AmpzProtocol__pending", False) \
-                and now - self.__last_error_at >= self.__settle_millis \
-                and now - self.__last_request_at >= self.__min_rerequest_millis:
-            self.__pending = False
+        if now - self.__last_request_at < self.__min_rerequest_millis:
+            return
+        if self.__pending:
+            if now - self.__last_error_at >= self.__settle_millis:
+                self.__pending = False
+                self.__tries_left = self.MAX_TRIES - 1
+                self.__request()
+        elif self.__tries_left > 0:
+            # Still no reply to the last request: ask again.
+            self.__tries_left -= 1
             self.__request()
 
     def __request(self):
@@ -80,5 +92,6 @@ class AmpzProtocol:
             return False
         if raw[4] == TYPE_HELLO_REPLY:
             self.alive = True
+            self.__tries_left = 0            # Ampz answered; the dump that follows is the fresh picture
             return True
         return False

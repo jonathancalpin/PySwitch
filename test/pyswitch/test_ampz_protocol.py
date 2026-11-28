@@ -135,3 +135,39 @@ class TestAmpzPresetName(unittest.TestCase):
         clock[0] += 600
         p.update()
         self.assertEqual(len(midi.messages_sent), 2)
+
+    def test_rerequest_repeats_until_the_reply_arrives(self):
+        clock = [50000]
+        period = MockPeriodCounter()
+        midi = MockMidiController()
+        p = AmpzProtocol(period_counter = period, now = lambda: clock[0])
+        p.init(midi, MockClient())
+        p.receive(_frame(TYPE_HELLO_REPLY, 0, [0x00, 0x01]))
+        LINK.lost()
+        p.update()
+        clock[0] += 500
+        p.update()
+        self.assertEqual(len(midi.messages_sent), 1)      # first request
+        clock[0] += 1100
+        p.update()
+        self.assertEqual(len(midi.messages_sent), 2)      # no reply: ask again
+        clock[0] += 1100
+        p.update()
+        self.assertEqual(len(midi.messages_sent), 3)
+        p.receive(_frame(TYPE_HELLO_REPLY, 0, [0x00, 0x01]))   # Ampz answered
+        clock[0] += 5000
+        p.update()
+        self.assertEqual(len(midi.messages_sent), 3)      # satisfied
+
+    def test_rerequest_gives_up_after_five_tries(self):
+        clock = [90000]
+        period = MockPeriodCounter()
+        midi = MockMidiController()
+        p = AmpzProtocol(period_counter = period, now = lambda: clock[0])
+        p.init(midi, MockClient())
+        p.receive(_frame(TYPE_HELLO_REPLY, 0, [0x00, 0x01]))
+        LINK.lost()
+        for _ in range(12):
+            clock[0] += 1100
+            p.update()
+        self.assertEqual(len(midi.messages_sent), 5)
