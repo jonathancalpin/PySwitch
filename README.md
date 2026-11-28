@@ -104,13 +104,18 @@ The shipped `content/` configuration drives the [Ampz](https://ampz.app) iOS amp
 - `AMPZ_SWITCH(cc, display, text, color, momentary, stomp, enable_callback, id, use_leds)` sends CC `cc` with value 127 on every press (and 0 on release when `momentary=True`). It owns no state and never repaints anything on a press.
 - `AmpzFeedbackCallback` (created by `AMPZ_SWITCH`) draws the switch's LED and label purely from what Ampz has sent: the CC value for brightness (127 on, 64 half, 0 off) and, for a `stomp`, the label frame for the pedal's name and family colour (`FAMILY_COLORS`). Nothing is polled; the mappings are response-only.
 - `AmpzPresetNameCallback` goes on a `DisplayLabel(callback=...)` and shows the preset name.
-- `AmpzProtocol` (in `communication.py` as `"protocol"`) sends a hello request at boot and every 3 s until Ampz answers, so a pedal powered on after the app still gets its labels.
+- `AmpzProtocol` (in `communication.py` as `"protocol"`) sends a hello request at boot and every 3 s until Ampz answers, so a pedal powered on after the app still gets its labels. After that it watches `LINK.errors`: whenever the input lost something (a truncated frame, a CC without its status) it asks Ampz for a fresh dump once the link has been quiet for 400 ms, and keeps asking every second until the reply arrives, up to five times.
+- `SysExRepairInput` (`clients/ampz/sysex_repair.py`, wired as the DIN port's `in_filter` in `communication.py`) repairs traffic that arrives through a Bluetooth-to-DIN adapter. Measured on a real adapter: consecutive CCs come with running status (which adafruit_midi does not read), timestamp bytes leak between and inside messages, two frames in three lose their F0, and adafruit_midi discards any SysEx that is not complete within one read. The filter expands running status, drops leaked bytes, re-frames Ampz's signature, and hands the library whole messages only. USB input is untouched.
+
+Both USB and the MIDI IN jack are routed to the application, so the pedal can reach the phone either way.
 
 Ampz's SysEx frame, parsed by byte position so the MIDI library's manufacturer-ID split does not matter:
 
 ```
-F0 7D 41 7A 01 <type> <index> 00 <payload> F7
+F0 7D 41 7A 01 <type> <index> <length> <payload> F7
 ```
+
+`<length>` is the payload length; a frame whose payload does not match it was damaged in transit and is rejected (the previous label stays and a re-request follows). Older Ampz builds send 0 here, which means "not stated".
 
 | Type | Index | Payload |
 |------|-------|---------|
@@ -121,7 +126,7 @@ F0 7D 41 7A 01 <type> <index> 00 <payload> F7
 
 Colour byte: 0 none (empty stomp, LED off), 1 dynamics, 2 drive, 3 amplifier, 4 modulation, 5 pitch, 6 filter, 7 wah, 8 reverb, 9 delay, 10 cabinets, 11 utility.
 
-In Ampz, learn each stomp switch as a Stomp Mapping in toggle mode (the default) and leave *Send state to controllers* on. Tests: `python3 -m unittest discover -t .testroot -s .testroot/test/pyswitch -p 'test_ampz_*.py'` after creating `.testroot/lib -> ../content/lib` and `.testroot/test -> ../test`.
+In Ampz, load the built-in *MIDI Captain Mini 6 (Ampz layout)* controller profile under MIDI settings (or learn each stomp switch as a Stomp Mapping in toggle mode by hand) and leave *Send state to controllers* on. The *Controller Feedback* section in Ampz's MIDI settings shows which devices it sends to, how many messages it has sent and when a controller last asked for a sync. Tests: `python3 -m unittest discover -t .testroot -s .testroot/test/pyswitch -p 'test_ampz_*.py'` after creating `.testroot/lib -> ../content/lib` and `.testroot/test -> ../test`.
 
 ## Motivation
 
