@@ -11,6 +11,7 @@ from pyswitch.hardware.devices.pa_midicaptain import (
     PA_MIDICAPTAIN_DIN_MIDI
 )
 from pyswitch.clients.ampz.protocol import AmpzProtocol
+from pyswitch.clients.ampz.sysex_repair import SysExRepairInput
 
 # USB MIDI
 _USB_MIDI = PA_MIDICAPTAIN_USB_MIDI(
@@ -19,8 +20,10 @@ _USB_MIDI = PA_MIDICAPTAIN_USB_MIDI(
 )
 
 # DIN MIDI (5-pin)
+# in_filter: a Bluetooth DIN adapter eats the F0 of two Ampz frames in three; the repair puts it back.
 _DIN_MIDI = PA_MIDICAPTAIN_DIN_MIDI(
-    out_channel = 0
+    out_channel = 0,
+    in_filter = SysExRepairInput
 )
 
 Communication = {

@@ -16,7 +16,7 @@ def PA_MIDICAPTAIN_USB_MIDI(in_channel = None, out_channel = 0, in_buf_size = 10
 # DIN Midi in/out for PA MIDICaptain devices. Uses UART mode so the ports must be board GPIO pins.
 # receiver_buffer_size: a host that answers with a burst (Ampz sends ten labels on a preset change)
 # overflows CircuitPython's 64-byte UART default while the display redraws; 512 holds a full dump.
-def PA_MIDICAPTAIN_DIN_MIDI(in_channel = None, out_channel = 0, in_buf_size = 100, receiver_buffer_size = 512):
+def PA_MIDICAPTAIN_DIN_MIDI(in_channel = None, out_channel = 0, in_buf_size = 100, receiver_buffer_size = 512, in_filter = None):
     from ..adafruit.AdafruitDinMidiDevice import AdafruitDinMidiDevice
     return AdafruitDinMidiDevice(
         gpio_in = _board.GP16,
@@ -26,6 +26,7 @@ def PA_MIDICAPTAIN_DIN_MIDI(in_channel = None, out_channel = 0, in_buf_size = 10
         baudrate = 31250,
         timeout = 0.001,
         in_buf_size = in_buf_size,
-        receiver_buffer_size = receiver_buffer_size
+        receiver_buffer_size = receiver_buffer_size,
+        in_filter = in_filter
     )
 
