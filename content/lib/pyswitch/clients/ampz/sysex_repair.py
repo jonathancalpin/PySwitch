@@ -18,13 +18,14 @@
 #
 ##############################################################################
 
-from . import AMPZ_PREFIX
+from . import AMPZ_PREFIX, LINK
 
 
 class SysExRepairInput:
 
-    def __init__(self, port, prefix = AMPZ_PREFIX):
+    def __init__(self, port, prefix = AMPZ_PREFIX, log_raw = False):
         self.__port = port
+        self.__log_raw = log_raw
         self.__prefix = bytes(prefix)
         self.__in_frame = False
         self.__cand = bytearray()      # data bytes that may be the start of a signature
@@ -40,6 +41,8 @@ class SysExRepairInput:
         raw = self.__port.read(nbytes)
         if not raw:
             return None
+        if self.__log_raw:   # pragma: no cover
+            print("RAW " + " ".join("%02x" % b for b in raw))
         out = bytearray()
         for b in raw:
             self.__feed(b, out)
@@ -66,8 +69,9 @@ class SysExRepairInput:
                 out += self.__held
                 self.__held = bytearray()
                 return
-            # A status byte before the message was complete: the held one was noise.
+            # A status byte before the message was complete: whatever it was is gone.
             self.__held = bytearray()
+            LINK.lost()
             # fall through with b
 
         if self.__in_frame:
@@ -126,7 +130,9 @@ class SysExRepairInput:
                 self.__in_frame = True
                 self.__frame_pos = plen
             return
-        # Not a signature: drop the oldest byte and re-test the rest, which may start one.
+        # Not a signature: an orphaned data byte (a CC that lost its status, a frame that lost
+        # its start and its signature). Drop the oldest byte and re-test the rest.
+        LINK.lost()
         rest = bytes(self.__cand[1:])
         self.__cand = bytearray()
         for d in rest:

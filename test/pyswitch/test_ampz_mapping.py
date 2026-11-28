@@ -20,6 +20,7 @@ with patch.dict(sys.modules, {
     from adafruit_midi.control_change import ControlChange
 
     from lib.pyswitch.clients.ampz import *
+    from lib.pyswitch.clients.ampz import LINK
 
 
 class TestAmpzMapping(unittest.TestCase):
@@ -66,4 +67,23 @@ class TestAmpzMapping(unittest.TestCase):
     def test_frame_builder_matches_the_contract(self):
         f = ampz_frame(TYPE_HELLO_REQUEST, 0, [0x00, 0x00])
         self.assertEqual(list(f.manufacturer_id), [0x7D])
-        self.assertEqual(list(f.data), [0x41, 0x7A, 0x01, 0x7F, 0x00, 0x00, 0x00, 0x00])
+        self.assertEqual(list(f.data), [0x41, 0x7A, 0x01, 0x7F, 0x00, 0x02, 0x00, 0x00])
+
+    def test_length_byte_rejects_a_truncated_label_and_counts_it(self):
+        m = AmpzSysexMapping("s3", TYPE_STOMP_LABEL, 3)
+        before = LINK.errors
+        # "PS" with length 3 (colour + 2 chars) arriving with the name bytes gone: rejected, value untouched
+        self.assertFalse(m.parse(SystemExclusive(manufacturer_id = [0x7D], data = [0x41, 0x7A, 0x01, 0x01, 0x03, 0x03, 0x05])))
+        self.assertIsNone(m.value)
+        self.assertEqual(LINK.errors, before + 1)
+        # the whole frame parses
+        self.assertTrue(m.parse(SystemExclusive(manufacturer_id = [0x7D], data = [0x41, 0x7A, 0x01, 0x01, 0x03, 0x03, 0x05, 0x50, 0x53])))
+        self.assertEqual(m.value, (5, "PS"))
+        # a library that leaves a trailing 0x00 on is still fine with a stated length
+        self.assertTrue(m.parse(SystemExclusive(manufacturer_id = [0x7D], data = [0x41, 0x7A, 0x01, 0x01, 0x03, 0x01, 0x00, 0x00])))
+        self.assertEqual(m.value, (0, ""))
+        self.assertEqual(LINK.errors, before + 1)
+
+    def test_frame_builder_states_the_payload_length(self):
+        msg = ampz_frame(TYPE_STOMP_LABEL, 2, [0x09, 0x44, 0x6C, 0x79])
+        self.assertEqual(list(msg.data)[5], 4)

@@ -5,7 +5,11 @@
 # Ampz echoes every stomp, looper and scene CC with the true state (0 off, 64 half, 127 on)
 # and carries names and colours in a short SysEx frame:
 #
-#     F0 7D 41 7A 01 <type> <index> 00 <payload> F7
+#     F0 7D 41 7A 01 <type> <index> <length> <payload> F7
+#
+# <length> is the payload length. A frame whose payload does not match it was truncated on the
+# way (seen with a Bluetooth DIN adapter) and is rejected, so a label never shows half a name.
+# Length 0 means "not stated" (older Ampz builds) and the payload is taken as it comes.
 #
 # 0x7D is the MIDI non-commercial manufacturer ID. The frame is parsed here by byte position
 # on the reassembled message (manufacturer bytes and data joined), so it does not matter how
@@ -22,6 +26,18 @@ TYPE_STOMP_LABEL = 0x01      # index = stomp 0..9; payload = colour byte, then A
 TYPE_PRESET_NAME = 0x03      # index 0; payload = ASCII name
 TYPE_HELLO_REPLY = 0x7E      # index 0; payload 00 01 (Ampz is alive, sent at the start of every dump)
 TYPE_HELLO_REQUEST = 0x7F    # index 0; payload 00 00 (Captain -> Ampz: please send a dump)
+
+
+# Counts information lost on the way in (truncated frames, orphaned data bytes). The protocol
+# asks Ampz for a fresh dump once the link has been quiet for a moment after an error.
+class _LinkHealth:
+    def __init__(self):
+        self.errors = 0
+
+    def lost(self):
+        self.errors += 1
+
+LINK = _LinkHealth()
 
 # Colour byte -> RGB. Mirrors Ampz's effect families.
 FAMILY_COLORS = {
@@ -42,21 +58,40 @@ FAMILY_COLORS = {
 
 # Builds an Ampz frame as a SystemExclusive message (without F0/F7, the library adds them).
 def ampz_frame(type, index, payload):
+    payload = list(payload)
     return SystemExclusive(
         manufacturer_id = [AMPZ_PREFIX[0]],
-        data = [AMPZ_PREFIX[1], AMPZ_PREFIX[2], AMPZ_PREFIX[3], type, index, 0x00] + list(payload)
+        data = [AMPZ_PREFIX[1], AMPZ_PREFIX[2], AMPZ_PREFIX[3], type, index, len(payload)] + payload
     )
 
 
-# Returns the whole message body (manufacturer bytes plus data) as a list, with one trailing
-# 0xF7 or 0x00 removed if the MIDI library left it on. None if the message is not SysEx.
+# Returns the whole message body (manufacturer bytes plus data) as a list, with a trailing 0xF7
+# removed if the MIDI library left it on. None if the message is not SysEx.
 def ampz_raw_bytes(midi_message):
     if not isinstance(midi_message, SystemExclusive):
         return None
     raw = list(midi_message.manufacturer_id) + list(midi_message.data)
-    if raw and (raw[-1] == 0xF7 or raw[-1] == 0x00):
+    if raw and raw[-1] == 0xF7:
         raw = raw[:-1]
     return raw
+
+
+# The payload of an Ampz frame body, checked against its length byte. None when the frame
+# was truncated or padded on the way (counted as a link error).
+def ampz_payload(raw):
+    length = raw[6]
+    payload = raw[7:]
+    if length == 0:
+        # Older Ampz builds state no length; a library may leave one trailing 0x00 on.
+        if payload and payload[-1] == 0x00:
+            payload = payload[:-1]
+        return payload
+    if len(payload) == length + 1 and payload[-1] == 0x00:
+        payload = payload[:-1]
+    if len(payload) != length:
+        LINK.lost()
+        return None
+    return payload
 
 
 # Response-only mapping for one Ampz frame (type and index). Values:
@@ -83,7 +118,9 @@ class AmpzSysexMapping(ClientParameterMapping):
         if raw[4] != self.frame_type or raw[5] != self.frame_index:
             return None
 
-        payload = raw[7:]
+        payload = ampz_payload(raw)
+        if payload is None:
+            return None
 
         if self.frame_type == TYPE_STOMP_LABEL:
             if not payload:
