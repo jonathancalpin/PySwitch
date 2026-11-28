@@ -110,14 +110,11 @@ class Action(Updateable):
         segments = self.__get_led_segments()
         if len(segments) == 0:
             return
+                
         tmp = self.switch.brightnesses
-        # Per-segment brightness: list/tuple of same length as segments (e.g. tap tempo on one segment)
-        if hasattr(brightness, "__len__") and len(brightness) == len(segments):
-            for i, segment in enumerate(segments):
-                tmp[segment] = brightness[i]
-        else:
-            for segment in segments:
-                tmp[segment] = brightness
+        for segment in segments:
+            tmp[segment] = brightness
+
         self.switch.brightnesses = tmp
 
     # Called regularly every update interval to update status of effects etc.
@@ -134,7 +131,6 @@ class Action(Updateable):
     def push(self):
         if self.callback:
             self.callback.push()
-            self.update_displays()
 
     # Called when the switch is released
     def release(self):

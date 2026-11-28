@@ -162,7 +162,7 @@ class Controller(Updater): #ClientRequestListener
             for action in input.actions:
                 action.reset()
 
-    # Refreshes all action displays (LEDs and labels) immediately. Call after page change.
+    # Refreshes all action displays (LEDs and labels) immediately. Call after page change so the next page's colors/scheme load fully without waiting for the next update period.
     def refresh_action_displays(self):
         for input in self.inputs:
             for action in input.actions:

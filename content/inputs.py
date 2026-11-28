@@ -1,76 +1,92 @@
 ##############################################################################
 #
-# MVP - MIDI Captain Mini 6
-# 4 pages: Logic, ToneX, GP-5, Looper
-# Page change: A+B = page down, B+C = page up (combo only)
+# Ampz (iOS) - MIDI Captain Mini 6, with feedback from Ampz
+# 3 pages: Stomp A, Stomp B, Looper     (all MIDI channel 1)
+# Presets and scenes live on the Chocolate Plus (and SCN-/SCN+ on the Looper page).
+# Page change: A+B = previous page, B+C = next page (combo only, wraps)
+#
+# Every stomp switch is an Ampz STOMP NUMBER, not an effect. Ampz sends each stomp's name,
+# family colour and state, so the labels and LEDs follow the loaded preset:
+#
+# Stomp A   [1] stomp 1 CC 83   [2] stomp 2 CC 82   [3] stomp 3 CC 90
+#           [A] stomp 4 CC 84 (hold = TUNER 68)  [B] stomp 5 CC 89  [C] stomp 6 CC 87
+# Stomp B   [1] stomp 7 CC 80   [2] stomp 8 CC 81   [3] Tap 85
+#           [A] stomp 9 CC 91 (hold = TUNER 68)   [B] stomp 10 CC 86  [C] TUNER 68
+# Looper    [1] REC 60    [2] PLAY 61   [3] STOP 62
+#           [A] UNDO 63 (hold = CLEAR 100)  [B] SCN- 104  [C] SCN+ 105
+#
+# TIMING: switches 1, 2, 3 send instantly on press. A, B, C wait 150 ms for the
+# paging combo, and A also carries hold actions (they send on release). Keep
+# time-critical functions (Tap, looper REC / PLAY / STOP) on the top row.
+#
+# Stomp switches always send 127: learn them in Ampz as Stomp Mappings in TOGGLE mode
+# (the default). Ampz flips the pedal and echoes the true state (0 off, 64 half, 127 on),
+# which is what lights the LED. Looper switches send 127 on press and 0 on release; their
+# LEDs follow Ampz's looper (REC red, dim red while overdubbing, PLAY green, STOP lit when
+# stopped, UNDO lit when there is something to undo). Tap, TUNER, SCN-, SCN+ and CLEAR get
+# no feedback and sit at their dim fixed colour.
 #
 ##############################################################################
 
-from pyswitch.hardware.devices.pa_midicaptain_mini_6 import *
+from pyswitch.clients.ampz.actions import AMPZ_SWITCH
 from pyswitch.clients.local.actions.pager import PagerAction
-from pyswitch.clients.local.actions.custom import CUSTOM_MESSAGE
 from pyswitch.colors import Colors
-from display import (
-    DISPLAY_HEADER_1, DISPLAY_HEADER_2, DISPLAY_HEADER_3,
-    DISPLAY_FOOTER_1, DISPLAY_FOOTER_2, DISPLAY_FOOTER_3,
-)
+from display import DISPLAY_HEADER_1
+from display import DISPLAY_HEADER_2
+from display import DISPLAY_HEADER_3
+from display import DISPLAY_FOOTER_1
+from display import DISPLAY_FOOTER_2
+from display import DISPLAY_FOOTER_3
+from pyswitch.hardware.devices.pa_midicaptain_mini_6 import *
 
 _pager = PagerAction(
-    pages=[
-        {"id": "logic", "color": Colors.BLUE, "text": "Logic"},
-        {"id": "tonex", "color": Colors.RED, "text": "ToneX"},
-        {"id": "gp5", "color": Colors.GREEN, "text": "GP-5"},
-        {"id": "looper", "color": Colors.PURPLE, "text": "Looper"},
+    pages = [
+        {
+            "id": "stompa",
+            "color": Colors.BLUE,
+            "text": "Stomp A",
+        },
+        {
+            "id": "stompb",
+            "color": Colors.TURQUOISE,
+            "text": "Stomp B",
+        },
+        {
+            "id": "looper",
+            "color": Colors.RED,
+            "text": "Looper",
+        },
     ],
-    led_brightness=0.3,
-    display=DISPLAY_FOOTER_2,
+    led_brightness = 0.3
 )
 
 ComboPager = _pager
 
+_WHITE = Colors.WHITE
+_SCENE = Colors.TURQUOISE
 
-def cc_toggle(channel, cc, color, text, page_id, display=None):
-    ch = channel - 1
-    return CUSTOM_MESSAGE(
-        message=[0xB0 + ch, cc, 127],
-        message_release=[0xB0 + ch, cc, 0],
-        color=color,
-        text=text,
-        id=page_id,
-        enable_callback=_pager.enable_callback,
-        toggle=True,
-        led_brightness=0.3,
-        led_brightness_off=0.02,
-        display=display,
+
+def _stomp(cc, stomp, display, page):
+    return AMPZ_SWITCH(
+        cc = cc,
+        stomp = stomp,
+        display = display,
+        color = _WHITE,
+        id = page,
+        enable_callback = _pager.enable_callback
     )
 
 
-def cc_momentary(channel, cc, color, text, page_id, display=None):
-    ch = channel - 1
-    return CUSTOM_MESSAGE(
-        message=[0xB0 + ch, cc, 127],
-        message_release=[0xB0 + ch, cc, 0],
-        color=color,
-        text=text,
-        id=page_id,
-        enable_callback=_pager.enable_callback,
-        display=display,
-    )
-
-
-def pc_select(channel, pc, color, text, page_id, display=None):
-    ch = channel - 1
-    return CUSTOM_MESSAGE(
-        message=[0xC0 + ch, pc],
-        message_release=None,
-        color=color,
-        text=text,
-        id=page_id,
-        enable_callback=_pager.enable_callback,
-        display=display,
-        group=f"pc_ch{channel}",
-        led_brightness=0.3,
-        led_brightness_off=0.02,
+def _button(cc, text, color, display, page, momentary = True, use_leds = True):
+    return AMPZ_SWITCH(
+        cc = cc,
+        text = text,
+        color = color,
+        display = display,
+        momentary = momentary,
+        use_leds = use_leds,
+        id = page,
+        enable_callback = _pager.enable_callback
     )
 
 
@@ -78,57 +94,58 @@ Inputs = [
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_1,
         "actions": [
-            cc_toggle(1, 80, Colors.BLUE, "Comp", "logic", DISPLAY_HEADER_1),
-            pc_select(2, 0, Colors.GREEN, "Clean", "tonex", DISPLAY_HEADER_1),
-            pc_select(3, 0, Colors.GREEN, "Pst1", "gp5", DISPLAY_HEADER_1),
-            cc_momentary(4, 60, Colors.RED, "REC", "looper", DISPLAY_HEADER_1),
+            _stomp(83, 0, DISPLAY_HEADER_1, 'stompa'),
+            _stomp(80, 6, DISPLAY_HEADER_1, 'stompb'),
+            _button(60, 'REC', Colors.RED, DISPLAY_HEADER_1, 'looper'),
         ],
-        "actionsHold": [_pager],
-        "holdTimeMillis": 99999,
     },
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_2,
         "actions": [
-            cc_toggle(1, 81, Colors.TURQUOISE, "EQ", "logic", DISPLAY_HEADER_2),
-            pc_select(2, 1, Colors.ORANGE, "Crunch", "tonex", DISPLAY_HEADER_2),
-            pc_select(3, 1, Colors.GREEN, "Pst2", "gp5", DISPLAY_HEADER_2),
-            cc_momentary(4, 61, Colors.GREEN, "PLAY", "looper", DISPLAY_HEADER_2),
+            _stomp(82, 1, DISPLAY_HEADER_2, 'stompa'),
+            _stomp(81, 7, DISPLAY_HEADER_2, 'stompb'),
+            _button(61, 'PLAY', Colors.GREEN, DISPLAY_HEADER_2, 'looper'),
         ],
     },
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_3,
         "actions": [
-            cc_toggle(1, 82, Colors.GREEN, "Delay", "logic", DISPLAY_HEADER_3),
-            pc_select(2, 2, Colors.RED, "Lead", "tonex", DISPLAY_HEADER_3),
-            pc_select(3, 2, Colors.GREEN, "Pst3", "gp5", DISPLAY_HEADER_3),
-            cc_momentary(4, 62, Colors.YELLOW, "STOP", "looper", DISPLAY_HEADER_3),
+            _stomp(90, 2, DISPLAY_HEADER_3, 'stompa'),
+            _button(85, 'Tap', _WHITE, DISPLAY_HEADER_3, 'stompb'),
+            _button(62, 'STOP', Colors.ORANGE, DISPLAY_HEADER_3, 'looper'),
         ],
     },
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_A,
         "actions": [
-            cc_toggle(1, 83, Colors.PURPLE, "Reverb", "logic", DISPLAY_FOOTER_1),
-            cc_toggle(2, 50, Colors.BLUE, "Mod", "tonex", DISPLAY_FOOTER_1),
-            cc_toggle(3, 19, Colors.ORANGE, "FX1", "gp5", DISPLAY_FOOTER_1),
-            cc_momentary(4, 63, Colors.ORANGE, "UNDO", "looper", DISPLAY_FOOTER_1),
+            _stomp(84, 3, DISPLAY_FOOTER_1, 'stompa'),
+            _stomp(91, 8, DISPLAY_FOOTER_1, 'stompb'),
+            _button(63, 'UNDO', Colors.YELLOW, DISPLAY_FOOTER_1, 'looper'),
+        ],
+        "actionsHold": [
+            _button(68, 'TUNER', _WHITE, None, 'stompa', momentary = False, use_leds = False),
+            _button(68, 'TUNER', _WHITE, None, 'stompb', momentary = False, use_leds = False),
+            _button(100, 'CLEAR', _WHITE, None, 'looper', momentary = False, use_leds = False),
         ],
     },
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_B,
         "actions": [
-            cc_toggle(1, 84, Colors.PINK, "Chorus", "logic", DISPLAY_FOOTER_2),
-            cc_toggle(2, 51, Colors.TURQUOISE, "Delay", "tonex", DISPLAY_FOOTER_2),
-            cc_toggle(3, 20, Colors.TURQUOISE, "FX2", "gp5", DISPLAY_FOOTER_2),
-            cc_toggle(4, 64, Colors.TURQUOISE, "1/2", "looper", DISPLAY_FOOTER_2),
+            _stomp(89, 4, DISPLAY_FOOTER_2, 'stompa'),
+            _stomp(86, 9, DISPLAY_FOOTER_2, 'stompb'),
+            _button(104, 'SCN-', _SCENE, DISPLAY_FOOTER_2, 'looper'),
         ],
     },
     {
         "assignment": PA_MIDICAPTAIN_MINI_SWITCH_C,
         "actions": [
-            cc_momentary(1, 85, Colors.WHITE, "Tap", "logic", DISPLAY_FOOTER_3),
-            cc_toggle(2, 52, Colors.PURPLE, "Reverb", "tonex", DISPLAY_FOOTER_3),
-            cc_toggle(3, 21, Colors.PURPLE, "FX3", "gp5", DISPLAY_FOOTER_3),
-            cc_momentary(4, 65, Colors.WHITE, "CLR", "looper", DISPLAY_FOOTER_3),
+            _stomp(87, 5, DISPLAY_FOOTER_3, 'stompa'),
+            _button(68, 'TUNER', Colors.LIGHT_BLUE, DISPLAY_FOOTER_3, 'stompb'),
+            _button(105, 'SCN+', _SCENE, DISPLAY_FOOTER_3, 'looper'),
         ],
+        "actionsHold": [
+            _pager,
+        ],
+        "holdTimeMillis": 99999,
     },
 ]

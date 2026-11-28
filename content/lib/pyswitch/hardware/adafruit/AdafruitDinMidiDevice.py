@@ -12,19 +12,22 @@ class AdafruitDinMidiDevice:
                  timeout,
                  in_channel = None,   # All
                  out_channel = 0, 
+                 receiver_buffer_size = 64,   # CircuitPython default; raise it when a host streams bursts in
+                 in_filter = None,            # optional wrapper class for the input side, e.g. an Ampz SysEx repair
         ):
 
         midi_uart = _UART(
             gpio_in, 
             gpio_out, 
             baudrate = baudrate, 
-            timeout = timeout
+            timeout = timeout,
+            receiver_buffer_size = receiver_buffer_size
         ) 
 
         self.__midi = _MIDI(
             midi_out = midi_uart, 
             out_channel = out_channel,
-            midi_in = midi_uart, 
+            midi_in = in_filter(midi_uart) if in_filter else midi_uart, 
             in_channel = in_channel,
             in_buf_size = in_buf_size
         )
