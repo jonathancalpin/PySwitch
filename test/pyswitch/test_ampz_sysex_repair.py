@@ -136,3 +136,33 @@ class TestRunningStatusRepair(unittest.TestCase):
         ccs = [out[i + 1] for i in range(0, len(out) - 2) if out[i] == 0xB0 and out[i + 2] == 0x00]
         self.assertEqual(ccs, [0x53, 0x52, 0x5A, 0x54, 0x59, 0x57, 0x50, 0x51, 0x5B, 0x56, 0x3C, 0x3D, 0x3E, 0x3F, 0x64])
         self.assertEqual(out[-2:], bytes([0xC0, 0x0F]))
+
+
+# adafruit_midi discards a SysEx that is not complete within one read, and a 31250-baud link
+# delivers most frames in several reads. The filter hands over whole messages only.
+class TestWholeMessagesOnly(unittest.TestCase):
+
+    def test_partial_frame_is_held_until_its_end_arrives(self):
+        port = _Port([FRAME_3[:5], FRAME_3[5:8], FRAME_3[8:]])
+        r = SysExRepairInput(port)
+        self.assertIsNone(r.read(100))
+        self.assertIsNone(r.read(100))
+        self.assertEqual(r.read(100), FRAME_3)
+
+    def test_complete_messages_before_a_partial_frame_are_released_at_once(self):
+        cc = bytes([0xB0, 0x53, 0x00])
+        port = _Port([cc + FRAME_3[:6], FRAME_3[6:]])
+        r = SysExRepairInput(port)
+        self.assertEqual(r.read(100), cc)
+        self.assertEqual(r.read(100), FRAME_3)
+
+    def test_partial_cc_is_held(self):
+        port = _Port([bytes([0xB0, 0x53]), bytes([0x7F])])
+        r = SysExRepairInput(port)
+        self.assertIsNone(r.read(100))
+        self.assertEqual(r.read(100), bytes([0xB0, 0x53, 0x7F]))
+
+    def test_frame_split_at_every_byte(self):
+        wire = bytes([0xB0, 0x53, 0x00]) + FRAME_3 + FRAME_3[1:] + bytes([0x9A]) + bytes([0xC0, 0x05])
+        want = bytes([0xB0, 0x53, 0x00]) + FRAME_3 + FRAME_3 + bytes([0xC0, 0x05])
+        self.assertEqual(_drain([bytes([b]) for b in wire]), want)

@@ -23,6 +23,8 @@
 #   - a CC or PC status immediately followed by the signature was a leaked byte, not a status
 #   - data bytes that belong to nothing (no running status, no signature) are information
 #     lost and counted on LINK so the protocol asks Ampz for a fresh dump
+#   - only whole messages are handed on: adafruit_midi discards a SysEx that is not complete
+#     within one read, and a 31250-baud link delivers most frames in several reads
 #
 # Wraps the UART for adafruit_midi: only read() is used by the library.
 #
@@ -43,6 +45,7 @@ class SysExRepairInput:
         self.__frame_pos = 0           # data bytes seen since the frame's F0
         self.__held = bytearray()      # a CC/PC status with its data so far
         self.__running = None          # last CC/PC status, for running status
+        self.__frame = bytearray()     # the frame being received, from its F0, released at F7
 
     @property
     def in_waiting(self):
@@ -98,15 +101,19 @@ class SysExRepairInput:
     # Inside a SysEx frame.
     def __feed_in_frame(self, b, out):
         plen = len(self.__prefix)
+        frame = self.__frame
         if b == 0xF7:
-            self.__flush_cand(out)
-            out.append(0xF7)
+            self.__flush_cand(frame)
+            frame.append(0xF7)
+            out += frame                             # whole frame: release it
+            self.__frame = bytearray()
             self.__in_frame = False
             return
         if b == 0xF0:
-            self.__flush_cand(out)
-            out.append(0xF7)                         # close the frame that lost its end
-            out.append(0xF0)
+            self.__flush_cand(frame)
+            frame.append(0xF7)                       # close the frame that lost its end
+            out += frame
+            self.__frame = bytearray([0xF0])
             self.__frame_pos = 0
             return
         if b >= 0x80:
@@ -120,20 +127,21 @@ class SysExRepairInput:
         if bytes(self.__cand) == self.__prefix[:len(self.__cand)]:
             if len(self.__cand) == plen:
                 if self.__cand_start > 0:
-                    out.append(0xF7)
-                    out.append(0xF0)
+                    frame.append(0xF7)
+                    out += frame
+                    frame = self.__frame = bytearray([0xF0])
                     self.__frame_pos = plen
-                out += self.__cand
+                frame += self.__cand
                 self.__cand = bytearray()
             return
-        self.__flush_cand(out)
+        self.__flush_cand(frame)
 
     # Between messages.
     def __feed_outside(self, b, out):
         plen = len(self.__prefix)
         if b == 0xF0:
             self.__drop_cand()
-            out.append(0xF0)
+            self.__frame = bytearray([0xF0])
             self.__in_frame = True
             self.__frame_pos = 0
             self.__running = None                    # SysEx cancels running status
@@ -156,8 +164,7 @@ class SysExRepairInput:
         self.__cand.append(b)
         if bytes(self.__cand) == self.__prefix[:len(self.__cand)]:
             if len(self.__cand) == plen:
-                out.append(0xF0)
-                out += self.__cand
+                self.__frame = bytearray([0xF0]) + self.__cand
                 self.__cand = bytearray()
                 self.__in_frame = True
                 self.__frame_pos = plen
@@ -185,9 +192,9 @@ class SysExRepairInput:
             self.__feed(d, out)
 
     # Candidate bytes inside a frame were ordinary data after all.
-    def __flush_cand(self, out):
+    def __flush_cand(self, target):
         if self.__cand:
-            out += self.__cand
+            target += self.__cand
             self.__cand = bytearray()
 
     # Candidate bytes outside a frame, cut short by a status: with no running status to
