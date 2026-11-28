@@ -32,7 +32,7 @@ def _drain(chunks):
     port = _Port(chunks)
     r = SysExRepairInput(port)
     out = bytearray()
-    for _ in range(len(chunks)):
+    for _ in range(len(chunks) + 1):     # one empty read at the end, as the library keeps polling
         got = r.read(100)
         if got:
             out += got
@@ -102,8 +102,21 @@ class TestRunningStatusRepair(unittest.TestCase):
         self.assertEqual(_drain([wire]), bytes([0xB0, 0x53, 0x00, 0xB0, 0x52, 0x00, 0xB0, 0x5A, 0x00]))
         self.assertEqual(LINK.errors, before)
 
-    def test_running_status_program_changes(self):
-        self.assertEqual(_drain([bytes([0xC0, 0x0E, 0x0F])]), bytes([0xC0, 0x0E, 0xC0, 0x0F]))
+    # Ampz sends one PC at a time, never a run of them. Data continuing after a PC means the
+    # PC status was a leaked byte sitting where a CC burst's B0 should have been.
+    def test_a_pc_whose_data_continues_was_a_cc_burst_with_a_leaked_status(self):
+        wire = bytes([0xC4, 0x53, 0x00, 0x52, 0x00, 0x5A, 0x00])
+        self.assertEqual(_drain([wire]), bytes([0xB4, 0x53, 0x00, 0xB4, 0x52, 0x00, 0xB4, 0x5A, 0x00]))
+
+    def test_a_lone_pc_is_released_by_the_next_message(self):
+        self.assertEqual(_drain([bytes([0xC0, 0x0E]) + FRAME_3]), bytes([0xC0, 0x0E]) + FRAME_3)
+        self.assertEqual(_drain([bytes([0xC0, 0x0E, 0xB0, 0x53, 0x7F])]), bytes([0xC0, 0x0E, 0xB0, 0x53, 0x7F]))
+
+    def test_a_pc_at_the_end_of_the_stream_is_released_on_a_later_empty_read(self):
+        port = _Port([bytes([0xC0, 0x0E])])
+        r = SysExRepairInput(port)
+        self.assertIsNone(r.read(100))
+        self.assertEqual(r.read(100), bytes([0xC0, 0x0E]))
 
     def test_leaked_byte_between_cc_number_and_value_is_ignored(self):
         self.assertEqual(_drain([bytes([0xB0, 0x52, 0xAB, 0x00])]), bytes([0xB0, 0x52, 0x00]))

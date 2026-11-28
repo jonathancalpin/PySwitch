@@ -21,6 +21,8 @@
 #   - a byte >= 0x80 that is not F0, F7, a CC or a PC status is dropped wherever it sits; one
 #     inside a half-received CC or PC is ignored rather than aborting the message
 #   - a CC or PC status immediately followed by the signature was a leaked byte, not a status
+#   - Ampz sends one PC at a time, so data continuing after a PC means a leaked byte sat
+#     where a CC burst's status should have been: the run is delivered as CCs
 #   - data bytes that belong to nothing (no running status, no signature) are information
 #     lost and counted on LINK so the protocol asks Ampz for a fresh dump
 #   - only whole messages are handed on: adafruit_midi discards a SysEx that is not complete
@@ -46,6 +48,7 @@ class SysExRepairInput:
         self.__held = bytearray()      # a CC/PC status with its data so far
         self.__running = None          # last CC/PC status, for running status
         self.__frame = bytearray()     # the frame being received, from its F0, released at F7
+        self.__pending_pc = None       # a complete PC, held one byte to see whether data follows
 
     @property
     def in_waiting(self):
@@ -54,6 +57,10 @@ class SysExRepairInput:
     def read(self, nbytes = None):
         raw = self.__port.read(nbytes)
         if not raw:
+            if self.__pending_pc:
+                pc = self.__pending_pc                # nothing followed it: a real PC
+                self.__pending_pc = None
+                return bytes(pc)
             return None
         if self.__log_raw:   # pragma: no cover
             print("RAW " + " ".join("%02x" % b for b in raw))
@@ -64,6 +71,16 @@ class SysExRepairInput:
 
     # One byte of the wire stream; appends repaired bytes to out.
     def __feed(self, b, out):
+        if self.__pending_pc:
+            pc = self.__pending_pc
+            self.__pending_pc = None
+            if b < 0x80:
+                # Data after a PC: the PC status was a leaked byte in place of a CC burst's B0.
+                self.__running = 0xB0 | (pc[0] & 0x0F)
+                self.__held = bytearray([self.__running, pc[1]])
+                self.__feed_held(b, out, True)
+                return
+            out += pc
         if self.__held:
             self.__feed_held(b, out, True)
         elif self.__in_frame:
@@ -94,6 +111,9 @@ class SysExRepairInput:
             # byte or running status that does not apply. Carry on as a signature candidate.
             self.__cand = bytearray(data)
             self.__cand_start = 0
+            return
+        if need == 2:
+            self.__pending_pc = bytes([self.__running]) + data
             return
         out.append(self.__running)
         out += data
